@@ -13,11 +13,27 @@ dotenv.config();
 const app: Application = express();
 const PORT = Number(process.env.PORT) || 5000;
 
+// Allowed frontend origins
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://decent-learning.vercel.app",
+  "https://instructor-decent.vercel.app",
+];
+
 // Middleware
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "https://decent-learning.vercel.app",
+    origin: (origin, callback) => {
+      // Allow requests without an origin (e.g. Postman)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS blocked this origin: ${origin}`));
+      }
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
@@ -43,9 +59,7 @@ const startServer = async (): Promise<void> => {
     const MONGODB_URI = process.env.MONGODB_URI;
 
     if (!MONGODB_URI) {
-      throw new Error(
-        "MONGODB_URI is missing from environment variables"
-      );
+      throw new Error("MONGODB_URI is missing from environment variables");
     }
 
     await mongoose.connect(MONGODB_URI);
@@ -63,3 +77,5 @@ const startServer = async (): Promise<void> => {
 
 // Start server
 startServer();
+
+export default app;
