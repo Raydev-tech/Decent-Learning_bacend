@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { protect } from "../middleware/authMiddleware";
-import { register, login, logout, getProfile, updateProfile } from "../controllers/authController";
+import { authorize, protect } from "../middleware/authMiddleware";
+import { register, login, logout, getProfile, updateProfile, getAllStudents, createInstructor, instructorLogin,  } from "../controllers/authController";
 
 const router = Router();
 
@@ -9,5 +9,22 @@ router.post("/login", login);
 router.get("/logout", logout);
 router.get("/profile", protect, getProfile);
 router.put("/profile", protect, updateProfile);
+// ADMIN: GET ALL STUDENTS
+router.get(
+  "/students",
+  protect,
+  getAllStudents
+);
+// ADMIN: CREATE INSTRUCTOR ACCOUNT
+router.post(
+  "/create-instructor",
+  createInstructor
+);
+
+// INSTRUCTOR LOGIN
+router.post(
+  "/instructor-login",
+  instructorLogin
+);
 
 export default router;

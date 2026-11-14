@@ -404,3 +404,199 @@ export const updateProfile = async (
     });
   }
 };
+
+// GET ALL STUDENTS (ADMIN ONLY)
+export const getAllStudents = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const students = await User.find({
+      role: "student",
+    })
+      .select("-password")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      message: "Students retrieved successfully",
+      totalStudents: students.length,
+      students: students.map((student) => ({
+        id: student._id.toString(),
+        fullName: student.fullName,
+        email: student.email,
+        role: student.role,
+        profilePicture: student.profilePicture,
+        isVerified: student.isVerified,
+        isActive: student.isActive,
+        createdAt: student.createdAt,
+      })),
+    });
+  } catch (error) {
+    console.error("Get all students error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Unable to retrieve students",
+    });
+  }
+};
+
+// CREATE INSTRUCTOR ACCOUNT (ADMIN ONLY)
+export const createInstructor = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { fullName, email, password } = req.body;
+
+    if (
+      typeof fullName !== "string" ||
+      typeof email !== "string" ||
+      typeof password !== "string" ||
+      !fullName.trim() ||
+      !email.trim() ||
+      !password
+    ) {
+      res.status(400).json({
+        success: false,
+        message: "Please provide full name, email and password",
+      });
+      return;
+    }
+
+    if (password.length < 8) {
+      res.status(400).json({
+        success: false,
+        message: "Password must be at least 8 characters",
+      });
+      return;
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const existingUser = await User.findOne({
+      email: normalizedEmail,
+    });
+
+    if (existingUser) {
+      res.status(409).json({
+        success: false,
+        message: "An account with this email already exists",
+      });
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    const instructor = await User.create({
+      fullName: fullName.trim(),
+      email: normalizedEmail,
+      password: hashedPassword,
+      role: "instructor",
+      isActive: true,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Instructor account created successfully",
+      instructor: {
+        id: instructor._id.toString(),
+        fullName: instructor.fullName,
+        email: instructor.email,
+        role: instructor.role,
+        isActive: instructor.isActive,
+        createdAt: instructor.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error("Create instructor error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Unable to create instructor account",
+    });
+  }
+};
+
+// INSTRUCTOR LOGIN
+export const instructorLogin = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { email, password } = req.body;
+
+    if (
+      typeof email !== "string" ||
+      typeof password !== "string" ||
+      !email.trim() ||
+      !password
+    ) {
+      res.status(400).json({
+        success: false,
+        message: "Please provide your email and password",
+      });
+      return;
+    }
+
+    const instructor = await User.findOne({
+      email: email.trim().toLowerCase(),
+    }).select("+password");
+
+    if (!instructor || instructor.role !== "instructor") {
+      res.status(401).json({
+        success: false,
+        message: "Invalid instructor email or password",
+      });
+      return;
+    }
+
+    if (!instructor.isActive) {
+      res.status(403).json({
+        success: false,
+        message: "Your instructor account is inactive",
+      });
+      return;
+    }
+
+    const passwordMatches = await bcrypt.compare(
+      password,
+      instructor.password
+    );
+
+    if (!passwordMatches) {
+      res.status(401).json({
+        success: false,
+        message: "Invalid instructor email or password",
+      });
+      return;
+    }
+
+    const token = generateToken(
+      instructor._id.toString(),
+      instructor.role
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Instructor login successful",
+      token,
+      user: {
+        id: instructor._id.toString(),
+        fullName: instructor.fullName,
+        email: instructor.email,
+        role: instructor.role,
+        profilePicture: instructor.profilePicture,
+        isVerified: instructor.isVerified,
+      },
+    });
+  } catch (error) {
+    console.error("Instructor login error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Unable to log in",
+    });
+  }
+};
