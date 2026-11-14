@@ -583,3 +583,53 @@ export const deleteCourse = async (
     });
   }
 };
+
+// ==========================================
+// GET LOGGED-IN INSTRUCTOR'S COURSES
+// ==========================================
+
+export const getMyCourses = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = String(res.locals.userId || "");
+    const userRole = String(res.locals.userRole || "");
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      res.status(401).json({
+        success: false,
+        message: "Invalid authenticated user.",
+      });
+      return;
+    }
+
+    if (userRole !== "instructor" && userRole !== "admin") {
+      res.status(403).json({
+        success: false,
+        message: "Only instructors can access their courses.",
+      });
+      return;
+    }
+
+    const courses = await Course.find({
+      instructorId: new mongoose.Types.ObjectId(userId),
+    })
+      .sort({ createdAt: -1 })
+      .select("-__v");
+
+    res.status(200).json({
+      success: true,
+      message: "Your courses were retrieved successfully.",
+      count: courses.length,
+      data: courses,
+    });
+  } catch (error) {
+    console.error("Get instructor courses error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve your courses.",
+    });
+  }
+};

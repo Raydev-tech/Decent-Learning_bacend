@@ -16,6 +16,7 @@ const PORT = Number(process.env.PORT) || 5000;
 // Allowed frontend origins
 const allowedOrigins = [
   "http://localhost:3000",
+  "http://localhost:3001",
   "https://decent-learning.vercel.app",
   "https://instructor-decent.vercel.app",
 ];

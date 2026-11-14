@@ -1,10 +1,10 @@
-
 import { Router } from "express";
 
 import {
   createCourse,
   getAllCourses,
   getCourseBySlug,
+  getMyCourses,
   updateCourse,
   deleteCourse,
 } from "../controllers/courseController";
@@ -18,17 +18,21 @@ import upload from "../middleware/uploadMiddleware";
 
 const router = Router();
 
-// PUBLIC ROUTES
-
-// Get all published courses
+// PUBLIC: GET ALL PUBLISHED COURSES
 router.get("/", getAllCourses);
 
-// Get a single published course
+// PROTECTED: GET LOGGED-IN INSTRUCTOR'S COURSES
+router.get(
+  "/my-courses",
+  protect,
+  authorize("instructor", "admin"),
+  getMyCourses
+);
+
+// PUBLIC: GET COURSE BY SLUG
 router.get("/:slug", getCourseBySlug);
 
-// PROTECTED INSTRUCTOR AND ADMIN ROUTES
-
-// Create a course
+// CREATE COURSE
 router.post(
   "/",
   protect,
@@ -37,7 +41,7 @@ router.post(
   createCourse
 );
 
-// Update a course
+// UPDATE COURSE
 router.put(
   "/:id",
   protect,
@@ -46,7 +50,7 @@ router.put(
   updateCourse
 );
 
-// Delete a course
+// DELETE COURSE
 router.delete(
   "/:id",
   protect,
