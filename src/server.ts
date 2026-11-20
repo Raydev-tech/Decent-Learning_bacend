@@ -1,5 +1,5 @@
 
-import express, { Application, Request, Response } from "express";
+import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
@@ -10,10 +10,9 @@ import courseRoutes from "./routes/courseRoutes";
 
 dotenv.config();
 
-const app: Application = express();
+const app = express();
 const PORT = Number(process.env.PORT) || 5000;
 
-// Allowed frontend origins
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
@@ -21,11 +20,9 @@ const allowedOrigins = [
   "https://instructor-decent.vercel.app",
 ];
 
-// Middleware
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests without an origin (e.g. Postman)
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -46,15 +43,15 @@ app.use("/api/auth", authRoutes);
 app.use("/api/student", dashboardRoutes);
 app.use("/api/courses", courseRoutes);
 
-// Test route
-app.get("/", (req: Request, res: Response) => {
+// Health check
+app.get("/", (_req, res) => {
   res.status(200).json({
     success: true,
     message: "Welcome to Decent Learning API 🚀",
   });
 });
 
-// Connect to MongoDB before starting the server
+// MongoDB connection and server startup
 const startServer = async (): Promise<void> => {
   try {
     const MONGODB_URI = process.env.MONGODB_URI;
@@ -76,7 +73,6 @@ const startServer = async (): Promise<void> => {
   }
 };
 
-// Start server
 startServer();
 
 export default app;
